@@ -10,6 +10,9 @@ let operand2 = null;
 let operator = null;
 let lastButtonPressed = '';
 let operationString = '';
+let operand = null;
+let value = null;
+let count = 0;
 
 // Initial Setup
 displayScreen.textContent = '0';
@@ -18,8 +21,14 @@ displayScreen.textContent = '0';
 const add = (a, b) => a + b;
 const subtract = (a, b) => a - b;
 const multiply = (a, b) => a * b;
-const divide = (a, b) => a / b;
+const divide = (a, b) => (a / b).toFixed(6);
 const modulo = (a, b) => a % b;
+
+// Check if Operand has Multiple Decimals
+const hasMultipleDecimals = (operand) => {
+  const str = operand.toString();
+  return str.indexOf('.') !== str.lastIndexOf('.');
+}
 
 // Evaluate Expression
 const evaluate = (operand1, operator, operand2) => {
@@ -28,15 +37,15 @@ const evaluate = (operand1, operator, operand2) => {
   }
   switch (operator) {
     case '+':
-      return add(operand1, operand2);
+      return Math.round(add(operand1, operand2)*1000000) / 1000000;
     case '-':
-      return subtract(operand1, operand2);
+      return Math.round(subtract(operand1, operand2)*1000000) / 1000000;
     case '*':
-      return multiply(operand1, operand2);
+      return Math.round(multiply(operand1, operand2)*1000000) / 1000000;
     case '/':
-      return divide(operand1, operand2);
+      return Math.round(divide(operand1, operand2)*1000000) / 1000000;
     case '%':
-      return modulo(operand1, operand2);
+      return Math.round(modulo(operand1, operand2)*1000000) / 1000000;
     default:
       return 'Invalid operator';
   }
@@ -44,7 +53,15 @@ const evaluate = (operand1, operator, operand2) => {
 
 // Button Handlers
 const handleButtonClick = (event) => {
+  const length = displayScreen.textContent.length;
+  if (length >= 10) {
+    return;
+  }
   const buttonText = event.target.textContent;
+  const operatorIndex = operationString.search(/[\+\-\*\/\%]/);
+  if (operatorIndex !== -1 && ['+', '-', '*', '/', '%'].includes(buttonText)) {
+    handleEqualsButton();
+  }
   if (displayScreen.textContent === '0' || ['+', '-', '*', '/', '%'].includes(lastButtonPressed)) {
     displayScreen.textContent = buttonText;
   } else {
@@ -54,12 +71,14 @@ const handleButtonClick = (event) => {
   operationString += buttonText;
 };
 
+// Clear Display
 const handleClearButton = () => {
   displayScreen.textContent = '0';
   operationString = '';
   operand1 = operand2 = operator = null;
 };
 
+// Backspace
 const handleBackButton = () => {
   const displayString = displayScreen.textContent;
   if (displayString.length === 1) {
@@ -70,17 +89,46 @@ const handleBackButton = () => {
   operationString = operationString.slice(0, -1);
 };
 
+// Equals Button
 const handleEqualsButton = () => {
   const operatorIndex = operationString.search(/[\+\-\*\/\%]/);
   if (operatorIndex === -1) {
     displayScreen.textContent = operationString;
     return;
   }
-  operand1 = parseFloat(operationString.slice(0, operatorIndex));
+  operand1 = operationString.slice(0, operatorIndex);
+  operand2 = operationString.slice(operatorIndex + 1);
+  if (hasMultipleDecimals(operand1) || hasMultipleDecimals(operand2)) {
+    displayScreen.textContent = 'Invalid Input';
+    operationString = '';
+    return;
+  }
+  operand1 = parseFloat(operand1);
   operator = operationString[operatorIndex];
-  operand2 = parseFloat(operationString.slice(operatorIndex + 1));
+  operand2 = parseFloat(operand2);
   displayScreen.textContent = evaluate(operand1, operator, operand2);
   operationString = displayScreen.textContent;
+};
+
+// Keyboard Support
+const handleKeyPress = (event) => {
+  const key = event.key;
+
+  if (key === 'Enter') {
+    handleEqualsButton();
+  }
+  else if (key === 'Backspace') {
+    handleBackButton();
+  }
+  else if (key === 'Escape') {
+    handleClearButton();
+  }
+  else if (key === '+' || key === '-' || key === '*' || key === '/' || key === '%') {
+    handleButtonClick({ target: { textContent: key } });
+  }
+  else if (key >= '0' && key <= '9') {
+    handleButtonClick({ target: { textContent: key } });
+  }
 };
 
 // Event Listeners
@@ -91,3 +139,4 @@ document.querySelectorAll('.btn').forEach(button => {
 backButton.addEventListener('click', handleBackButton);
 clearButton.addEventListener('click', handleClearButton);
 equalsButton.addEventListener('click', handleEqualsButton);
+document.addEventListener('keydown', handleKeyPress);
