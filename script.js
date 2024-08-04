@@ -1,30 +1,29 @@
-let operand1;
-let operand2;
-let operator;
-let displayScreen = document.querySelector('.display-screen');
+// DOM Elements
+const displayScreen = document.querySelector('.display-screen');
+const clearButton = document.getElementById('clearButton');
+const backButton = document.getElementById('backButton');
+const equalsButton = document.getElementById('equalsButton');
 
-function add(a, b) {
-  return a + b;
-}
+// State Variables
+let operand1 = null;
+let operand2 = null;
+let operator = null;
+let lastButtonPressed = '';
+let operationString = '';
 
-function subtract(a, b) {
-  return a - b;
-}
+// Initial Setup
+displayScreen.textContent = '0';
 
-function multiply(a, b) {
-  return a * b;
-}
+// Arithmetic Operations
+const add = (a, b) => a + b;
+const subtract = (a, b) => a - b;
+const multiply = (a, b) => a * b;
+const divide = (a, b) => a / b;
+const modulo = (a, b) => a % b;
 
-function divide(a, b) {
-  return a / b;
-}
-
-function modulo(a, b) {
-  return a % b;
-}
-
-function evaluate(operand1, operator, operand2) {
-  if (operand2===0) {
+// Evaluate Expression
+const evaluate = (operand1, operator, operand2) => {
+  if (operator === '/' && operand2 === 0) {
     return 'Cannot divide by zero';
   }
   switch (operator) {
@@ -41,54 +40,53 @@ function evaluate(operand1, operator, operand2) {
     default:
       return 'Invalid operator';
   }
-}
+};
 
-displayScreen.textContent = '0';
+// Button Handlers
+const handleButtonClick = (event) => {
+  const buttonText = event.target.textContent;
+  if (displayScreen.textContent === '0' || ['+', '-', '*', '/', '%'].includes(lastButtonPressed)) {
+    displayScreen.textContent = buttonText;
+  } else {
+    displayScreen.textContent += buttonText;
+  }
+  lastButtonPressed = buttonText;
+  operationString += buttonText;
+};
 
-document.querySelectorAll('.btn').forEach((button) => {
-  button.addEventListener('click', (event) => {
-    event.preventDefault();
-    if (displayScreen.textContent === '0') {
-      displayScreen.textContent = button.textContent;
-    } else {
-      displayScreen.textContent += button.textContent;
-    }
-  });
-});
-
-const clearButton = document.getElementById('clearButton');
-const backButton = document.getElementById('backButton');
-const equalsButton = document.getElementById('equalsButton');
-
-function handleClearButton() {
+const handleClearButton = () => {
   displayScreen.textContent = '0';
-}
+  operationString = '';
+  operand1 = operand2 = operator = null;
+};
 
-function handleBackButton() {
+const handleBackButton = () => {
   const displayString = displayScreen.textContent;
   if (displayString.length === 1) {
     displayScreen.textContent = '0';
   } else {
-    displayScreen.textContent = displayString.slice(0, displayString.length - 1);
+    displayScreen.textContent = displayString.slice(0, -1);
   }
-}
+  operationString = operationString.slice(0, -1);
+};
 
-function handleEqualsButton() {
-  const displayString = displayScreen.textContent;
-  console.log(displayString);
-  const operatorIndex = displayString.search(/[\+\-\*\/\%]/);
+const handleEqualsButton = () => {
+  const operatorIndex = operationString.search(/[\+\-\*\/\%]/);
   if (operatorIndex === -1) {
-    displayScreen.textContent = displayString;
+    displayScreen.textContent = operationString;
     return;
   }
-  operand1 = parseFloat(displayString.slice(0, operatorIndex));
-  console.log(displayString.slice(0, operatorIndex));
-  console.log(operand1);
-  operator = displayString[operatorIndex];
-  operand2 = parseFloat(displayString.slice(operatorIndex + 1));
-  console.log(operand2);
-  displayScreen.textContent = evaluate(operand1, operator, operand2);  
-}
+  operand1 = parseFloat(operationString.slice(0, operatorIndex));
+  operator = operationString[operatorIndex];
+  operand2 = parseFloat(operationString.slice(operatorIndex + 1));
+  displayScreen.textContent = evaluate(operand1, operator, operand2);
+  operationString = displayScreen.textContent;
+};
+
+// Event Listeners
+document.querySelectorAll('.btn').forEach(button => {
+  button.addEventListener('click', handleButtonClick);
+});
 
 backButton.addEventListener('click', handleBackButton);
 clearButton.addEventListener('click', handleClearButton);
